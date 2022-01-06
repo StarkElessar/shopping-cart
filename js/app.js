@@ -1,26 +1,73 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const productsContainer = document.getElementById('products-container')
+  getProducts()
+
+  async function getProducts() {
+    const response = await fetch('js/products.json')    
+    const productsArray = await response.json() 
+    
+    renderProducts(productsArray)
+  }
+  
+  const renderProducts = (productsArray) => {
+    productsArray.forEach((item) => {
+      const { id, imgSrc, title, itemsInBox, weight, price } = item
+      const productHTML = `
+        <div class="col-md-6">
+          <div class="card mb-4" data-id="${id}">
+            <img class="product-img" src="img/roll/${imgSrc}" alt="">
+            <div class="card-body text-center">
+              <h4 class="item-title">${title}</h4>
+              <p><small data-items-in-box class="text-muted">${itemsInBox} шт.</small></p>
+
+              <div class="details-wrapper">
+                <div class="items counter-wrapper">
+                  <div class="items__control" data-action="minus">-</div>
+                  <div class="items__current" data-counter>1</div>
+                  <div class="items__control" data-action="plus">+</div>
+                </div>
+
+                <div class="price">
+                  <div class="price__weight">${weight}г.</div>
+                  <div class="price__currency">${price} ₽</div>
+                </div>
+              </div>
+
+              <button data-cart type="button" class="btn btn-block btn-outline-warning">+ в корзину</button>
+
+            </div>
+          </div>
+        </div>
+      `
+
+      productsContainer.insertAdjacentHTML('beforeend', productHTML)
+    })
+  }
+
+  
   document.addEventListener('click', (event) => {
     let counter
-    const $this       = event.target
-    const cartWrapper = document.querySelector('.cart-wrapper')
-    // const cartItems   = document.querySelectorAll('.cart-item')
-    const cartIsEmpty = document.querySelector('[data-cart-empty]')
-    const orderForm   = document.getElementById('order-form')
+    const $this           = event.target
+    const cartWrapper     = document.querySelector('.cart-wrapper')
+    const cartIsEmpty     = document.querySelector('[data-cart-empty]')
+    const orderForm       = document.getElementById('order-form')
+    const deliveryCost    = document.querySelector('.delivery-cost')
+    const deliveryLabel = document.querySelector('[data-cart-delivery]')
     
-    const calculatorCartPrice = () => {
+    const calculatorCartPriceAndDelivery = () => {
       let totalPrice = 0
       const cartItems = document.querySelectorAll('.cart-item')
       
       cartItems.forEach((item) => {
         const amountElement = item.querySelector('[data-counter]')
-        const priceElement = item.querySelector('.price__currency')
-
-        const currentPrice = parseInt(amountElement.innerText) * parseInt(priceElement.innerText)
+        const priceElement  = item.querySelector('.price__currency')
+        const currentPrice  = parseInt(amountElement.innerText) * parseInt(priceElement.innerText)
 
         totalPrice += currentPrice
-        console.log(totalPrice);
       })
       document.querySelector('.total-price').innerHTML = totalPrice
+      deliveryCost.classList.toggle('free', totalPrice >= 600)
+      totalPrice >= 600 ? deliveryCost.innerHTML = 'бесплатно' : deliveryCost.innerHTML = '250 ₽'
     }
 
     if ($this.dataset.action === 'minus' || $this.dataset.action === 'plus') {
@@ -34,13 +81,14 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if ($this.closest('.cart-wrapper') && parseInt(counter.innerText) === 1) {
         $this.closest('.cart-item').remove()
         toggleCartStatus()
+        calculatorCartPriceAndDelivery()
       }
     }
     if ($this.dataset.action === 'plus') {
       counter.innerHTML = parseInt(counter.innerText) + 1
     }
     if ($this.hasAttribute('data-action') && $this.closest('.cart-wrapper')) {
-      calculatorCartPrice()
+      calculatorCartPriceAndDelivery()
     }
 
     // Клик по кнопке "в корзину"
@@ -92,18 +140,21 @@ document.addEventListener('DOMContentLoaded', () => {
       // Сбрасываю счетчик после нажатия добавления товара в корзину
       card.querySelector('[data-counter]').innerText = '1'
       toggleCartStatus()
-      calculatorCartPrice()
+      calculatorCartPriceAndDelivery()
     }
 
     function toggleCartStatus() {
-      if (cartWrapper.children.length > 0) {
-        cartIsEmpty.classList.add('hide')
-        orderForm.classList.remove('none')
-      } else {
-        cartIsEmpty.classList.remove('hide')
-        orderForm.classList.add('none')
-        document.querySelector('.total-price').innerHTML = 0
-      }
+      cartIsEmpty.classList.toggle('hide', cartWrapper.children.length > 0)
+      orderForm.classList.toggle('none', cartWrapper.children.length === 0)
+      deliveryLabel.classList.toggle('none', cartWrapper.children.length === 0)
+
+      // if (cartWrapper.children.length > 0) {
+      //   cartIsEmpty.classList.add('hide')
+      //   orderForm.classList.remove('none')
+      // } else {
+      //   cartIsEmpty.classList.remove('hide')
+      //   orderForm.classList.add('none')
+      // }
     }
   })
 })

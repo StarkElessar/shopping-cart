@@ -165,7 +165,7 @@ h3, h4 {
 }
 
 .delivery-cost {
-
+  /* color: #eee; */
 }
 
 .free {
@@ -186,4 +186,8 @@ h3, h4 {
 
 .cart-empty.hide {
   display: none;
+}
+
+.text-gray {
+  color: #aaa;
 }
